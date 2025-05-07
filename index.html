@@ -141,6 +141,8 @@
     }
 
     function showAnswers() {
+      clearInterval(timerInterval);
+      document.getElementById('timer').textContent = '';
       const table = document.querySelector('#tableArea table');
       const rows = table.rows;
       for (let i = 0; i < rows.length; i++) {
@@ -150,7 +152,11 @@
           if (index < 46) {
             const itemIndex = items[index];
             const answer = currentMode === 'kana' ? currentSet[itemIndex] : korean[itemIndex];
-            cells[j].textContent = answer; // 왼쪽 td에 정답 표시, 오른쪽 canvas는 유지
+            cells[j].textContent = answer;
+            const canvas = cells[j + 1].querySelector('canvas');
+            if (canvas) {
+              canvas.style.pointerEvents = 'none'; // 수정 막기
+            }
           }
         }
       }
