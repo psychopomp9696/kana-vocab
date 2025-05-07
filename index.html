@@ -19,15 +19,18 @@
 <body>
   <h1>히라가나 / 가타카나 단어장</h1>
   <div id="main">
-    <button onclick="selectMode('hiragana')">히라가나</button>
-    <button onclick="selectMode('katakana')">가타카나</button>
+    <button onclick="playClickSound(); selectMode('hiragana')">히라가나</button>
+    <button onclick="playClickSound(); selectMode('katakana')">가타카나</button>
   </div>
   <div id="sub" style="display:none;"></div>
   <div id="countdown"></div>
   <div id="tableArea"></div>
   <div id="timer"></div>
   <button id="saveBtn" style="display:none;">이미지로 저장</button>
-  <button id="restartBtn" style="display:none;" onclick="restart()">처음으로</button>
+  <button id="restartBtn" style="display:none;" onclick="playClickSound(); restart()">처음으로</button>
+
+  <audio id="clickSound" src="mixkit-typewriter-soft-click-1125.wav"></audio>
+  <audio id="startSound" src="mixkit-kids-cartoon-close-bells-2256.wav"></audio>
 
   <script>
     const hiragana = ["あ","い","う","え","お","か","き","く","け","こ","さ","し","す","せ","そ","た","ち","つ","て","と","な","に","ぬ","ね","の","は","ひ","ふ","へ","ほ","ま","み","む","め","も","や","ゆ","よ","ら","り","る","れ","ろ","わ","を","ん"];
@@ -36,22 +39,35 @@
 
     let currentSet = [], currentLang = '', timerInterval, countdownInterval, timeLeft;
 
+    function playClickSound() {
+      const audio = document.getElementById('clickSound');
+      audio.currentTime = 0;
+      audio.play();
+    }
+
+    function playStartSound() {
+      const audio = document.getElementById('startSound');
+      audio.currentTime = 0;
+      audio.play();
+    }
+
     function selectMode(lang) {
       currentLang = lang;
       currentSet = lang === 'hiragana' ? hiragana : katakana;
       document.getElementById('main').style.display = 'none';
       const sub = document.getElementById('sub');
-      sub.innerHTML = `<button onclick="prepareStart('kana')">히라가나 쓰기</button>
-                       <button onclick="prepareStart('korean')">한국어 쓰기</button>`;
+      sub.innerHTML = `<button onclick="playClickSound(); prepareStart('kana')">히라가나 쓰기</button>
+                       <button onclick="playClickSound(); prepareStart('korean')">한국어 쓰기</button>`;
       sub.style.display = 'block';
     }
 
     function prepareStart(mode) {
       document.getElementById('sub').style.display = 'none';
       const timer = document.getElementById('timer');
-      timer.innerHTML = `<button onclick="startQuiz('${mode}',180)">3분</button>
-                         <button onclick="startQuiz('${mode}',300)">5분</button>
-                         <button onclick="startQuiz('${mode}',600)">10분</button>`;
+      timer.innerHTML = `<button onclick="playClickSound(); startQuiz('${mode}',180)">3분</button>
+                         <button onclick="playClickSound(); startQuiz('${mode}',300)">5분</button>
+                         <button onclick="playClickSound(); startQuiz('${mode}',600)">10분</button>
+                         <button onclick="playClickSound(); startPractice('${mode}')">연습하기</button>`;
     }
 
     function startQuiz(mode, seconds) {
@@ -66,6 +82,7 @@
         } else if (count < 0) {
           clearInterval(countdownInterval);
           countdown.textContent = '';
+          playStartSound();
           showTable(mode);
           startTimer(seconds);
         } else {
@@ -74,9 +91,15 @@
       }, 1000);
     }
 
+    function startPractice(mode) {
+      document.getElementById('timer').innerHTML = '';
+      showTable(mode);
+    }
+
     function showTable(mode) {
       const tableArea = document.getElementById('tableArea');
       document.getElementById('saveBtn').style.display = 'inline-block';
+      document.getElementById('restartBtn').style.display = 'inline-block';
       let items = [...currentSet.keys()];
       items.sort(() => Math.random() - 0.5);
       let html = '<table><tbody>';
@@ -107,8 +130,6 @@
         if (timeLeft <= 0) {
           clearInterval(timerInterval);
           document.getElementById('tableArea').innerHTML = '<h2 id="timeUp">시간 종료</h2>';
-          document.getElementById('saveBtn').style.display = 'none';
-          document.getElementById('restartBtn').style.display = 'inline-block';
         }
       }, 1000);
     }
