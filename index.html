@@ -7,13 +7,18 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
-    body { font-family: 'Noto Sans JP', sans-serif; text-align: center; margin: 20px; background-color: #f9f9f9; }
-    table { margin: 20px auto; border-collapse: collapse; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-    td { border: 1px solid #ddd; padding: 10px; width: 60px; height: 60px; font-size: 20px; border-radius: 8px; background-color: #fff; }
+    body { font-family: 'Noto Sans JP', sans-serif; text-align: center; margin: 10px; background-color: #f9f9f9; }
+    table { margin: 10px auto; border-collapse: collapse; width: 100%; max-width: 800px; }
+    td { border: 1px solid #ddd; padding: 5px; font-size: 20px; border-radius: 8px; background-color: #fff; text-align: center; }
     button { margin: 5px; padding: 10px 20px; font-size: 16px; background-color: #6c5ce7; color: white; border: none; border-radius: 8px; cursor: pointer; transition: background 0.3s; }
     button:hover { background-color: #a29bfe; }
+    canvas { border: 1px solid #ccc; border-radius: 4px; background: #fff; }
     h1, h2, h3 { color: #6c5ce7; }
-    #countdown, #timeUp { font-size: 40px; margin-top: 20px; color: #d63031; }
+    #countdown, #timeUp { font-size: 30px; margin-top: 10px; color: #d63031; }
+    @media (max-width: 600px) {
+      td { font-size: 14px; }
+      button { font-size: 14px; padding: 8px 12px; }
+    }
   </style>
 </head>
 <body>
@@ -66,7 +71,7 @@
 
     function startQuiz(mode, seconds) {
       document.getElementById('timer').innerHTML = '';
-      let count = 4; // Start from 4 so the first decrement hits 3
+      let count = 4;
       const countdown = document.getElementById('countdown');
       countdownInterval = setInterval(() => {
         count--;
@@ -99,7 +104,7 @@
           if (index < 46) {
             const itemIndex = items[index];
             const content = mode === 'kana' ? korean[itemIndex] : currentSet[itemIndex];
-            html += `<td>${content}</td><td></td>`;
+            html += `<td>${content}</td><td><canvas width="60" height="60" onmousedown="startDraw(event, this)" onmousemove="draw(event, this)" onmouseup="stopDraw(this)"></canvas></td>`;
           } else {
             html += '<td></td><td></td>';
           }
@@ -108,6 +113,25 @@
       }
       html += '</tbody></table>';
       tableArea.innerHTML = html;
+    }
+
+    let isDrawing = false;
+    function startDraw(e, canvas) {
+      isDrawing = true;
+      const ctx = canvas.getContext('2d');
+      ctx.beginPath();
+      ctx.moveTo(e.offsetX, e.offsetY);
+    }
+
+    function draw(e, canvas) {
+      if (!isDrawing) return;
+      const ctx = canvas.getContext('2d');
+      ctx.lineTo(e.offsetX, e.offsetY);
+      ctx.stroke();
+    }
+
+    function stopDraw(canvas) {
+      isDrawing = false;
     }
 
     function startTimer(duration) {
