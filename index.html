@@ -47,7 +47,8 @@
       currentSet = lang === 'hiragana' ? hiragana : katakana;
       document.getElementById('main').style.display = 'none';
       const sub = document.getElementById('sub');
-      sub.innerHTML = `<button onclick="prepareStart('kana')">히라가나/가타카나 쓰기</button>
+      const langLabel = lang === 'hiragana' ? '히라가나' : '가타카나';
+      sub.innerHTML = `<button onclick="prepareStart('kana')">${langLabel} 쓰기</button>
                        <button onclick="prepareStart('korean')">한국어 쓰기</button>`;
       sub.style.display = 'block';
     }
@@ -96,7 +97,13 @@
           if (index < 46) {
             const itemIndex = items[index];
             const content = mode === 'kana' ? korean[itemIndex] : currentSet[itemIndex];
-            html += `<td>${content}</td><td><canvas width="60" height="60" data-index="${itemIndex}" onmousedown="startDraw(event, this)" onmousemove="draw(event, this)" onmouseup="stopDraw(this)"></canvas></td>`;
+            html += `<td>${content}</td><td><canvas width="60" height="60" data-index="${itemIndex}" 
+                onmousedown="startDraw(event, this)" 
+                onmousemove="draw(event, this)" 
+                onmouseup="stopDraw(this)"
+                ontouchstart="startDraw(event, this)"
+                ontouchmove="draw(event, this)"
+                ontouchend="stopDraw(this)"></canvas></td>`;
           } else {
             html += '<td></td><td></td>';
           }
@@ -112,14 +119,21 @@
       canvasStates.set(canvas, true);
       const ctx = canvas.getContext('2d');
       ctx.beginPath();
-      ctx.moveTo(e.offsetX, e.offsetY);
+      const rect = canvas.getBoundingClientRect();
+      const x = e.touches ? e.touches[0].clientX - rect.left : e.offsetX;
+      const y = e.touches ? e.touches[0].clientY - rect.top : e.offsetY;
+      ctx.moveTo(x, y);
     }
 
     function draw(e, canvas) {
       if (!canvasStates.get(canvas)) return;
       const ctx = canvas.getContext('2d');
-      ctx.lineTo(e.offsetX, e.offsetY);
+      const rect = canvas.getBoundingClientRect();
+      const x = e.touches ? e.touches[0].clientX - rect.left : e.offsetX;
+      const y = e.touches ? e.touches[0].clientY - rect.top : e.offsetY;
+      ctx.lineTo(x, y);
       ctx.stroke();
+      e.preventDefault();
     }
 
     function stopDraw(canvas) {
@@ -129,14 +143,14 @@
     function showAnswers() {
       const table = document.querySelector('#tableArea table');
       const rows = table.rows;
-      for (let i = 0; i < 8; i++) {
+      for (let i = 0; i < rows.length; i++) {
         const cells = rows[i].cells;
-        for (let j = 0; j < 6; j++) {
-          const index = i * 6 + j;
+        for (let j = 0; j < cells.length; j += 2) {
+          const index = i * 6 + j / 2;
           if (index < 46) {
             const itemIndex = items[index];
             const answer = currentMode === 'kana' ? currentSet[itemIndex] : korean[itemIndex];
-            cells[j * 2].textContent = answer;  // 왼쪽 td에 정답 표시, canvas 유지
+            cells[j].textContent = answer; // 왼쪽 td에 정답 표시, 오른쪽 canvas는 유지
           }
         }
       }
@@ -186,4 +200,3 @@
   </script>
 </body>
 </html>
-
