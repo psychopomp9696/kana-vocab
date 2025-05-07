@@ -40,7 +40,9 @@
     let currentSet = [], currentLang = '', timerInterval, countdownInterval, timeLeft;
 
     function playClickSound() {
-      document.getElementById('clickSound').play();
+      const audio = document.getElementById('clickSound');
+      audio.currentTime = 0;
+      audio.play();
     }
 
     function selectMode(lang) {
@@ -64,24 +66,21 @@
 
     function startQuiz(mode, seconds) {
       document.getElementById('timer').innerHTML = '';
-      let count = 3;
+      let count = 4; // Start from 4 so the first decrement hits 3
       const countdown = document.getElementById('countdown');
-      countdown.textContent = count;
       countdownInterval = setInterval(() => {
-        if (count > 0) {
-          playClickSound();
-        }
         count--;
-        if (count === 0) {
+        if (count > 0) {
+          countdown.textContent = count;
+          playClickSound();
+        } else if (count === 0) {
           countdown.textContent = 'START!';
           document.getElementById('startSound').play();
-        } else if (count < 0) {
+        } else {
           clearInterval(countdownInterval);
           countdown.textContent = '';
           showTable(mode);
           startTimer(seconds);
-        } else {
-          countdown.textContent = count;
         }
       }, 1000);
     }
@@ -154,3 +153,4 @@
   </script>
 </body>
 </html>
+
