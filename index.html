@@ -24,8 +24,8 @@
 <body>
   <h1>히라가나 / 가타카나 단어장</h1>
   <div id="main">
-    <button onclick="selectMode('hiragana'); playClickSound()">히라가나</button>
-    <button onclick="selectMode('katakana'); playClickSound()">가타카나</button>
+    <button onclick="selectMode('hiragana')">히라가나</button>
+    <button onclick="selectMode('katakana')">가타카나</button>
   </div>
   <div id="sub" style="display:none;"></div>
   <div id="countdown"></div>
@@ -33,10 +33,7 @@
   <div id="timer"></div>
   <button id="saveBtn" style="display:none;" onclick="saveImage()">이미지로 저장</button>
   <button id="answerBtn" style="display:none;" onclick="showAnswers()">답지 보기</button>
-  <button id="restartBtn" style="display:none;" onclick="playClickSound(); restart()">처음으로</button>
-
-  <audio id="clickSound" src="mixkit-typewriter-soft-click-1125.wav"></audio>
-  <audio id="startSound" src="mixkit-kids-cartoon-close-bells-2256.wav"></audio>
+  <button id="restartBtn" style="display:none;" onclick="restart()">처음으로</button>
 
   <script>
     const hiragana = ["あ","い","う","え","お","か","き","く","け","こ","さ","し","す","せ","そ","た","ち","つ","て","と","な","に","ぬ","ね","の","は","ひ","ふ","へ","ほ","ま","み","む","め","も","や","ゆ","よ","ら","り","る","れ","ろ","わ","を","ん"];
@@ -44,23 +41,14 @@
     const korean = ["아","이","우","에","오","카","키","쿠","케","코","사","시","스","세","소","타","치","츠","테","토","나","니","누","네","노","하","히","후","헤","호","마","미","무","메","모","야","유","요","라","리","루","레","로","와","오","응"];
 
     let currentSet = [], currentLang = '', timerInterval, countdownInterval, timeLeft, items = [], currentMode;
-    let activeCanvas = null;
-    let drawing = false;
-
-    function playClickSound() {
-      const audio = document.getElementById('clickSound');
-      audio.currentTime = 0;
-      audio.play();
-    }
 
     function selectMode(lang) {
       currentLang = lang;
       currentSet = lang === 'hiragana' ? hiragana : katakana;
       document.getElementById('main').style.display = 'none';
       const sub = document.getElementById('sub');
-      const writingLabel = lang === 'hiragana' ? '히라가나 쓰기' : '가타카나 쓰기';
-      sub.innerHTML = `<button onclick="prepareStart('kana'); playClickSound()">${writingLabel}</button>
-                       <button onclick="prepareStart('korean'); playClickSound()">한국어 쓰기</button>`;
+      sub.innerHTML = `<button onclick="prepareStart('kana')">히라가나/가타카나 쓰기</button>
+                       <button onclick="prepareStart('korean')">한국어 쓰기</button>`;
       sub.style.display = 'block';
     }
 
@@ -82,10 +70,8 @@
         count--;
         if (count > 0) {
           countdown.textContent = count;
-          playClickSound();
         } else if (count === 0) {
           countdown.textContent = 'START!';
-          document.getElementById('startSound').play();
         } else {
           clearInterval(countdownInterval);
           countdown.textContent = '';
@@ -110,17 +96,7 @@
           if (index < 46) {
             const itemIndex = items[index];
             const content = mode === 'kana' ? korean[itemIndex] : currentSet[itemIndex];
-            html += `<td>${content}</td><td>
-              <canvas width="60" height="60"
-                onmousedown="startDraw(event, this)"
-                onmousemove="draw(event)"
-                onmouseup="stopDraw()"
-                onmouseleave="stopDraw()"
-                ontouchstart="startDraw(event, this)"
-                ontouchmove="draw(event)"
-                ontouchend="stopDraw()"
-              ></canvas>
-            </td>`;
+            html += `<td>${content}</td><td><canvas width="60" height="60" data-index="${itemIndex}" onmousedown="startDraw(event, this)" onmousemove="draw(event, this)" onmouseup="stopDraw(this)"></canvas></td>`;
           } else {
             html += '<td></td><td></td>';
           }
@@ -131,59 +107,39 @@
       tableArea.innerHTML = html;
     }
 
+    const canvasStates = new Map();
     function startDraw(e, canvas) {
-      drawing = true;
-      activeCanvas = canvas;
+      canvasStates.set(canvas, true);
       const ctx = canvas.getContext('2d');
       ctx.beginPath();
-      const { x, y } = getPos(e, canvas);
-      ctx.moveTo(x, y);
-      e.preventDefault();
+      ctx.moveTo(e.offsetX, e.offsetY);
     }
 
-    function draw(e) {
-      if (!drawing || !activeCanvas) return;
-      const ctx = activeCanvas.getContext('2d');
-      const { x, y } = getPos(e, activeCanvas);
-      ctx.lineTo(x, y);
+    function draw(e, canvas) {
+      if (!canvasStates.get(canvas)) return;
+      const ctx = canvas.getContext('2d');
+      ctx.lineTo(e.offsetX, e.offsetY);
       ctx.stroke();
-      e.preventDefault();
     }
 
-    function stopDraw() {
-      drawing = false;
-      activeCanvas = null;
-    }
-
-    function getPos(e, canvas) {
-      const rect = canvas.getBoundingClientRect();
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      return {
-        x: clientX - rect.left,
-        y: clientY - rect.top
-      };
+    function stopDraw(canvas) {
+      canvasStates.set(canvas, false);
     }
 
     function showAnswers() {
-      const tableArea = document.getElementById('tableArea');
-      let html = '<table><tbody>';
+      const table = document.querySelector('#tableArea table');
+      const rows = table.rows;
       for (let i = 0; i < 8; i++) {
-        html += '<tr>';
+        const cells = rows[i].cells;
         for (let j = 0; j < 6; j++) {
           const index = i * 6 + j;
           if (index < 46) {
             const itemIndex = items[index];
             const answer = currentMode === 'kana' ? currentSet[itemIndex] : korean[itemIndex];
-            html += `<td>${answer}</td><td></td>`;
-          } else {
-            html += '<td></td><td></td>';
+            cells[j * 2].textContent = answer;  // 왼쪽 td에 정답 표시, canvas 유지
           }
         }
-        html += '</tr>';
       }
-      html += '</tbody></table>';
-      tableArea.innerHTML = html;
     }
 
     function startTimer(duration) {
@@ -230,3 +186,4 @@
   </script>
 </body>
 </html>
+
