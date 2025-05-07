@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>히라가나/가타카나 단어장</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     body { font-family: 'Noto Sans JP', sans-serif; text-align: center; margin: 20px; background-color: #f9f9f9; }
     table { margin: 20px auto; border-collapse: collapse; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
@@ -24,6 +25,7 @@
 
   <div id="sub" style="display:none;"></div>
   <div id="tableArea"></div>
+  <button id="saveBtn" style="display:none;">이미지로 저장</button>
 
   <script>
     const hiragana = ["あ","い","う","え","お","か","き","く","け","こ","さ","し","す","せ","そ","た","ち","つ","て","と","な","に","ぬ","ね","の","は","ひ","ふ","へ","ほ","ま","み","む","め","も","や","ゆ","よ","ら","り","る","れ","ろ","わ","を","ん"];
@@ -32,6 +34,15 @@
 
     let currentSet = [];
     let currentLang = '';
+
+    document.getElementById('saveBtn').addEventListener('click', () => {
+      html2canvas(document.getElementById('tableArea')).then(function(canvas) {
+        const link = document.createElement('a');
+        link.href = canvas.toDataURL('image/png');
+        link.download = 'kana_vocab.png';
+        link.click();
+      });
+    });
 
     function selectMode(lang) {
       currentLang = lang;
@@ -45,26 +56,23 @@
 
     function showTable(mode) {
       const tableArea = document.getElementById('tableArea');
+      document.getElementById('saveBtn').style.display = 'inline-block';
       let items = [...currentSet.keys()];
       items = items.sort(() => Math.random() - 0.5);
 
       const header = `<h2>${mode === 'kana' ? (currentLang === 'hiragana' ? '히라가나 쓰기' : '가타카나 쓰기') : '한국어 쓰기'}</h2>`;
       let html = '<table><tbody>';
 
-      for (let i = 0; i < 12; i++) {
+      for (let i = 0; i < 8; i++) {
         html += '<tr>';
-        for (let j = 0; j < 4; j++) {
-          const index = i * 4 + j;
+        for (let j = 0; j < 6; j++) {
+          const index = i * 6 + j;
           if (index < 46) {
             const itemIndex = items[index];
             const content = mode === 'kana' ? korean[itemIndex] : currentSet[itemIndex];
-            if (i === 11 && (j === 2 || j === 3)) {
-              html += '<td></td>'; // 마지막 줄 2칸 비움
-            } else {
-              html += `<td>${content}</td>`;
-            }
+            html += `<td>${content}</td><td></td>`; // 문제 + 빈칸
           } else {
-            html += '<td></td>';
+            html += '<td></td><td></td>';
           }
         }
         html += '</tr>';
