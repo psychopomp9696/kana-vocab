@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>히라가나/가타카나 단어장</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Noto Sans JP', sans-serif; text-align: center; margin: 20px; background-color: #f9f9f9; }
+    table { margin: 20px auto; border-collapse: collapse; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    td { border: 1px solid #ddd; padding: 10px; width: 60px; height: 60px; font-size: 20px; border-radius: 8px; background-color: #fff; }
+    button { margin: 5px; padding: 10px 20px; font-size: 16px; background-color: #6c5ce7; color: white; border: none; border-radius: 8px; cursor: pointer; transition: background 0.3s; }
+    button:hover { background-color: #a29bfe; }
+    h1 { color: #6c5ce7; }
+    h2 { margin-top: 20px; color: #2d3436; }
+  </style>
+</head>
+<body>
+  <h1>히라가나 / 가타카나 단어장</h1>
+  <div id="main">
+    <button onclick="selectMode('hiragana')">히라가나</button>
+    <button onclick="selectMode('katakana')">가타카나</button>
+  </div>
+
+  <div id="sub" style="display:none;"></div>
+  <div id="tableArea"></div>
+
+  <script>
+    const hiragana = ["あ","い","う","え","お","か","き","く","け","こ","さ","し","す","せ","そ","た","ち","つ","て","と","な","に","ぬ","ね","の","は","ひ","ふ","へ","ほ","ま","み","む","め","も","や","ゆ","よ","ら","り","る","れ","ろ","わ","を","ん"];
+    const katakana = ["ア","イ","ウ","エ","オ","カ","キ","ク","ケ","コ","サ","シ","ス","セ","ソ","タ","チ","ツ","テ","ト","ナ","ニ","ヌ","ネ","ノ","ハ","ヒ","フ","ヘ","ホ","マ","ミ","ム","メ","モ","ヤ","ユ","ヨ","ラ","リ","ル","レ","ロ","ワ","ヲ","ン"];
+    const korean = ["아","이","우","에","오","카","키","쿠","케","코","사","시","스","세","소","타","치","츠","테","토","나","니","누","네","노","하","히","후","헤","호","마","미","무","메","모","야","유","요","라","리","루","레","로","와","오","응"];
+
+    let currentSet = [];
+    let currentLang = '';
+
+    function selectMode(lang) {
+      currentLang = lang;
+      currentSet = (lang === 'hiragana') ? hiragana : katakana;
+      document.getElementById('main').style.display = 'none';
+      const sub = document.getElementById('sub');
+      sub.innerHTML = `<button onclick="showTable('kana')">${lang === 'hiragana' ? '히라가나' : '가타카나'} 쓰기</button>
+                       <button onclick="showTable('korean')">한국어 쓰기</button>`;
+      sub.style.display = 'block';
+    }
+
+    function showTable(mode) {
+      const tableArea = document.getElementById('tableArea');
+      let items = [...currentSet.keys()];
+      items = items.sort(() => Math.random() - 0.5);
+
+      const header = `<h2>${mode === 'kana' ? (currentLang === 'hiragana' ? '히라가나 쓰기' : '가타카나 쓰기') : '한국어 쓰기'}</h2>`;
+      let html = '<table><tbody>';
+
+      for (let i = 0; i < 12; i++) {
+        html += '<tr>';
+        for (let j = 0; j < 4; j++) {
+          const index = i * 4 + j;
+          if (index < 46) {
+            const itemIndex = items[index];
+            const content = mode === 'kana' ? korean[itemIndex] : currentSet[itemIndex];
+            if (i === 11 && (j === 2 || j === 3)) {
+              html += '<td></td>'; // 마지막 줄 2칸 비움
+            } else {
+              html += `<td>${content}</td>`;
+            }
+          } else {
+            html += '<td></td>';
+          }
+        }
+        html += '</tr>';
+      }
+
+      html += '</tbody></table>';
+      tableArea.innerHTML = header + html;
+    }
+  </script>
+</body>
+</html>
