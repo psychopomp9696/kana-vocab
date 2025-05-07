@@ -12,8 +12,8 @@
     td { border: 1px solid #ddd; padding: 10px; width: 60px; height: 60px; font-size: 20px; border-radius: 8px; background-color: #fff; }
     button { margin: 5px; padding: 10px 20px; font-size: 16px; background-color: #6c5ce7; color: white; border: none; border-radius: 8px; cursor: pointer; transition: background 0.3s; }
     button:hover { background-color: #a29bfe; }
-    h1 { color: #6c5ce7; }
-    h2 { margin-top: 20px; color: #2d3436; }
+    h1, h2, h3 { color: #6c5ce7; }
+    #countdown, #timeUp { font-size: 40px; margin-top: 20px; color: #d63031; }
   </style>
 </head>
 <body>
@@ -22,47 +22,64 @@
     <button onclick="selectMode('hiragana')">히라가나</button>
     <button onclick="selectMode('katakana')">가타카나</button>
   </div>
-
   <div id="sub" style="display:none;"></div>
+  <div id="countdown"></div>
   <div id="tableArea"></div>
+  <div id="timer"></div>
   <button id="saveBtn" style="display:none;">이미지로 저장</button>
+  <button id="restartBtn" style="display:none;" onclick="restart()">처음으로</button>
 
   <script>
     const hiragana = ["あ","い","う","え","お","か","き","く","け","こ","さ","し","す","せ","そ","た","ち","つ","て","と","な","に","ぬ","ね","の","は","ひ","ふ","へ","ほ","ま","み","む","め","も","や","ゆ","よ","ら","り","る","れ","ろ","わ","を","ん"];
     const katakana = ["ア","イ","ウ","エ","オ","カ","キ","ク","ケ","コ","サ","シ","ス","セ","ソ","タ","チ","ツ","テ","ト","ナ","ニ","ヌ","ネ","ノ","ハ","ヒ","フ","ヘ","ホ","マ","ミ","ム","メ","モ","ヤ","ユ","ヨ","ラ","リ","ル","レ","ロ","ワ","ヲ","ン"];
     const korean = ["아","이","우","에","오","카","키","쿠","케","코","사","시","스","세","소","타","치","츠","테","토","나","니","누","네","노","하","히","후","헤","호","마","미","무","메","모","야","유","요","라","리","루","레","로","와","오","응"];
 
-    let currentSet = [];
-    let currentLang = '';
-
-    document.getElementById('saveBtn').addEventListener('click', () => {
-      html2canvas(document.getElementById('tableArea')).then(function(canvas) {
-        const link = document.createElement('a');
-        link.href = canvas.toDataURL('image/png');
-        link.download = 'kana_vocab.png';
-        link.click();
-      });
-    });
+    let currentSet = [], currentLang = '', timerInterval, countdownInterval, timeLeft;
 
     function selectMode(lang) {
       currentLang = lang;
-      currentSet = (lang === 'hiragana') ? hiragana : katakana;
+      currentSet = lang === 'hiragana' ? hiragana : katakana;
       document.getElementById('main').style.display = 'none';
       const sub = document.getElementById('sub');
-      sub.innerHTML = `<button onclick="showTable('kana')">${lang === 'hiragana' ? '히라가나' : '가타카나'} 쓰기</button>
-                       <button onclick="showTable('korean')">한국어 쓰기</button>`;
+      sub.innerHTML = `<button onclick="prepareStart('kana')">히라가나 쓰기</button>
+                       <button onclick="prepareStart('korean')">한국어 쓰기</button>`;
       sub.style.display = 'block';
+    }
+
+    function prepareStart(mode) {
+      document.getElementById('sub').style.display = 'none';
+      const timer = document.getElementById('timer');
+      timer.innerHTML = `<button onclick="startQuiz('${mode}',180)">3분</button>
+                         <button onclick="startQuiz('${mode}',300)">5분</button>
+                         <button onclick="startQuiz('${mode}',600)">10분</button>`;
+    }
+
+    function startQuiz(mode, seconds) {
+      document.getElementById('timer').innerHTML = '';
+      let count = 3;
+      const countdown = document.getElementById('countdown');
+      countdown.textContent = count;
+      countdownInterval = setInterval(() => {
+        count--;
+        if (count === 0) {
+          countdown.textContent = 'START!';
+        } else if (count < 0) {
+          clearInterval(countdownInterval);
+          countdown.textContent = '';
+          showTable(mode);
+          startTimer(seconds);
+        } else {
+          countdown.textContent = count;
+        }
+      }, 1000);
     }
 
     function showTable(mode) {
       const tableArea = document.getElementById('tableArea');
       document.getElementById('saveBtn').style.display = 'inline-block';
       let items = [...currentSet.keys()];
-      items = items.sort(() => Math.random() - 0.5);
-
-      const header = `<h2>${mode === 'kana' ? (currentLang === 'hiragana' ? '히라가나 쓰기' : '가타카나 쓰기') : '한국어 쓰기'}</h2>`;
+      items.sort(() => Math.random() - 0.5);
       let html = '<table><tbody>';
-
       for (let i = 0; i < 8; i++) {
         html += '<tr>';
         for (let j = 0; j < 6; j++) {
@@ -70,17 +87,58 @@
           if (index < 46) {
             const itemIndex = items[index];
             const content = mode === 'kana' ? korean[itemIndex] : currentSet[itemIndex];
-            html += `<td>${content}</td><td></td>`; // 문제 + 빈칸
+            html += `<td>${content}</td><td></td>`;
           } else {
             html += '<td></td><td></td>';
           }
         }
         html += '</tr>';
       }
-
       html += '</tbody></table>';
-      tableArea.innerHTML = header + html;
+      tableArea.innerHTML = html;
     }
+
+    function startTimer(duration) {
+      timeLeft = duration;
+      updateTimerDisplay();
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        updateTimerDisplay();
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          document.getElementById('tableArea').innerHTML = '<h2 id="timeUp">시간 종료</h2>';
+          document.getElementById('saveBtn').style.display = 'none';
+          document.getElementById('restartBtn').style.display = 'inline-block';
+        }
+      }, 1000);
+    }
+
+    function updateTimerDisplay() {
+      const min = Math.floor(timeLeft / 60);
+      const sec = timeLeft % 60;
+      document.getElementById('timer').textContent = `타이머: ${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+    }
+
+    function restart() {
+      clearInterval(timerInterval);
+      clearInterval(countdownInterval);
+      document.getElementById('main').style.display = 'block';
+      document.getElementById('sub').style.display = 'none';
+      document.getElementById('tableArea').innerHTML = '';
+      document.getElementById('timer').innerHTML = '';
+      document.getElementById('countdown').textContent = '';
+      document.getElementById('saveBtn').style.display = 'none';
+      document.getElementById('restartBtn').style.display = 'none';
+    }
+
+    document.getElementById('saveBtn').addEventListener('click', () => {
+      html2canvas(document.getElementById('tableArea')).then(canvas => {
+        const link = document.createElement('a');
+        link.href = canvas.toDataURL('image/png');
+        link.download = 'kana_vocab.png';
+        link.click();
+      });
+    });
   </script>
 </body>
 </html>
