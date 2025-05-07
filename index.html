@@ -32,6 +32,7 @@
   <div id="tableArea"></div>
   <div id="timer"></div>
   <button id="saveBtn" style="display:none;" onclick="saveImage()">이미지로 저장</button>
+  <button id="answerBtn" style="display:none;" onclick="showAnswers()">답지 보기</button>
   <button id="restartBtn" style="display:none;" onclick="playClickSound(); restart()">처음으로</button>
 
   <audio id="clickSound" src="mixkit-typewriter-soft-click-1125.wav"></audio>
@@ -42,7 +43,7 @@
     const katakana = ["ア","イ","ウ","エ","オ","カ","キ","ク","ケ","コ","サ","シ","ス","セ","ソ","タ","チ","ツ","テ","ト","ナ","ニ","ヌ","ネ","ノ","ハ","ヒ","フ","ヘ","ホ","マ","ミ","ム","メ","モ","ヤ","ユ","ヨ","ラ","リ","ル","レ","ロ","ワ","ヲ","ン"];
     const korean = ["아","이","우","에","오","카","키","쿠","케","코","사","시","스","세","소","타","치","츠","테","토","나","니","누","네","노","하","히","후","헤","호","마","미","무","메","모","야","유","요","라","리","루","레","로","와","오","응"];
 
-    let currentSet = [], currentLang = '', timerInterval, countdownInterval, timeLeft;
+    let currentSet = [], currentLang = '', timerInterval, countdownInterval, timeLeft, items = [], currentMode;
 
     function playClickSound() {
       const audio = document.getElementById('clickSound');
@@ -61,6 +62,7 @@
     }
 
     function prepareStart(mode) {
+      currentMode = mode;
       document.getElementById('sub').style.display = 'none';
       const timer = document.getElementById('timer');
       timer.innerHTML = `<button onclick="startQuiz('${mode}',180)">3분</button>
@@ -94,7 +96,8 @@
       const tableArea = document.getElementById('tableArea');
       document.getElementById('saveBtn').style.display = 'inline-block';
       document.getElementById('restartBtn').style.display = 'inline-block';
-      let items = [...currentSet.keys()];
+      document.getElementById('answerBtn').style.display = 'inline-block';
+      items = [...currentSet.keys()];
       items.sort(() => Math.random() - 0.5);
       let html = '<table><tbody>';
       for (let i = 0; i < 8; i++) {
@@ -104,7 +107,7 @@
           if (index < 46) {
             const itemIndex = items[index];
             const content = mode === 'kana' ? korean[itemIndex] : currentSet[itemIndex];
-            html += `<td>${content}</td><td><canvas width="60" height="60" onmousedown="startDraw(event, this)" onmousemove="draw(event, this)" onmouseup="stopDraw(this)"></canvas></td>`;
+            html += `<td>${content}</td><td><canvas width="60" height="60" data-index="${itemIndex}" onmousedown="startDraw(event, this)" onmousemove="draw(event, this)" onmouseup="stopDraw(this)"></canvas></td>`;
           } else {
             html += '<td></td><td></td>';
           }
@@ -115,23 +118,44 @@
       tableArea.innerHTML = html;
     }
 
-    let isDrawing = false;
+    const canvasStates = new Map();
     function startDraw(e, canvas) {
-      isDrawing = true;
+      canvasStates.set(canvas, true);
       const ctx = canvas.getContext('2d');
       ctx.beginPath();
       ctx.moveTo(e.offsetX, e.offsetY);
     }
 
     function draw(e, canvas) {
-      if (!isDrawing) return;
+      if (!canvasStates.get(canvas)) return;
       const ctx = canvas.getContext('2d');
       ctx.lineTo(e.offsetX, e.offsetY);
       ctx.stroke();
     }
 
     function stopDraw(canvas) {
-      isDrawing = false;
+      canvasStates.set(canvas, false);
+    }
+
+    function showAnswers() {
+      const tableArea = document.getElementById('tableArea');
+      let html = '<table><tbody>';
+      for (let i = 0; i < 8; i++) {
+        html += '<tr>';
+        for (let j = 0; j < 6; j++) {
+          const index = i * 6 + j;
+          if (index < 46) {
+            const itemIndex = items[index];
+            const answer = currentMode === 'kana' ? currentSet[itemIndex] : korean[itemIndex];
+            html += `<td>${answer}</td><td></td>`;
+          } else {
+            html += '<td></td><td></td>';
+          }
+        }
+        html += '</tr>';
+      }
+      html += '</tbody></table>';
+      tableArea.innerHTML = html;
     }
 
     function startTimer(duration) {
@@ -163,6 +187,7 @@
       document.getElementById('timer').innerHTML = '';
       document.getElementById('countdown').textContent = '';
       document.getElementById('saveBtn').style.display = 'none';
+      document.getElementById('answerBtn').style.display = 'none';
       document.getElementById('restartBtn').style.display = 'none';
     }
 
